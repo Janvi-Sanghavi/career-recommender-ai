@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Recommender Chatbot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        .chat-container { width: 100vw; height: 100vh; background: white; display: flex; flex-direction: column; overflow: hidden; }
+        .form-panel {
+            width: 100%; height: 100vh;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            overflow-y: auto;
+        }
+        .form-wrapper { max-width: 400px; width: 100%; flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: center; height: 100%; }
+        .form-header { margin-bottom: 20px; }
+        .form-panel h1 { color: white; font-size: 2.5em; font-weight: 700; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-panel p { color: rgba(255,255,255,0.9); font-size: 1.1em; max-width: 80%; }
+        .form-fields { width: 100%; max-width: 400px; margin-bottom: auto; }
+        .form-group { width: 100%; margin-bottom: 20px; }
+        .form-group label { display: block; color: white; font-weight: 500; margin-bottom: 8px; font-size: 1em; text-align: left; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 1em;
+            font-family: 'Poppins', sans-serif; background: rgba(255,255,255,0.95);
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px);
+        }
+        .form-actions { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+        .start-btn {
+            width: 100%; max-width: 300px; padding: 18px; background: #4ecdc4; color: white; border: none;
+            border-radius: 12px; font-size: 1.2em; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; margin-bottom: 10px;
+        }
+        .start-btn:hover { background: #45b7aa; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(78, 205, 196, 0.3); }
+        .start-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .enter-hint { color: rgba(255,255,255,0.8); font-size: 0.9em; margin: 0; }
+        .chat-panel { width: 100%; height: 100vh; display: flex; flex-direction: column; background: #f8f9fa; }
+        .chat-header { background: #2c3e50; color: white; padding: 20px; text-align: center; font-size: 1.3em; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f8f9fa; }
+        .message { padding: 16px 20px; border-radius: 20px; max-width: 75%; word-wrap: break-word; position: relative; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .bot-message {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            align-self: flex-start; border-bottom-left-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .bot-message::before {
+            content: '🤖 CareerBot'; display: block; font-size: 0.85em; color: #555;
+            margin-bottom: 8px; font-weight: 500;
+        }
+        .user-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; align-self: flex-end; border-bottom-right-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .user-message::before {
+            content: 'You'; display: block; font-size: 0.85em; color: rgba(255,255,255,0.9);
+            margin-bottom: 8px; font-weight: 500; text-align: right;
+        }
+        .hidden { display: none !important; }
+
+        /* Markdown Styles */
+        .bot-message h3 { font-size: 1.2em; color: #2c3e50; margin: 10px 0; }
+        .bot-message strong { font-weight: 700; color: #333; }
+        .bot-message em { font-style: italic; color: #555; }
+        .bot-message ul { margin: 10px 0; padding-left: 20px; }
+        .bot-message li { margin: 4px 0; line-height: 1.4; }
+
+        @media (max-width: 768px) {
+            .form-panel { padding: 15px; justify-content: flex-start; padding-top: 40px; }
+            .form-panel h1 { font-size: 2em; }
+            .form-fields { margin-bottom: 40px; }
+            .message { max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="form-panel" id="formPanel">
+            <div class="form-wrapper">
+                <div class="form-header">
+                    <h1>🚀 CareerBot</h1>
+                    <p>Get personalized career advice tailored just for you!</p>
+                </div>
+                <div class="form-fields">
+                    <form id="profileForm">
+                        <div class="form-group"><label>Your Name</label><input type="text" id="name" name="name" required></div>
+                        <div class="form-group"><label>Interests</label><input type="text" id="interests" name="interests" required></div>
+                        <div class="form-group"><label>Skills (or none yet!)</label><input type="text" id="skills" name="skills" required></div>
+                        <div class="form-group">
+                            <label>Stream</label>
+                            <select id="stream" name="stream" required>
+                                <option value="">Select Stream</option>
+                                <option value="Science">Science</option>
+                                <option value="Arts">Arts</option>
+                                <option value="Commerce">Commerce</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Grade Level</label>
+                            <select id="grade_level" name="grade_level" required>
+                                <option value="">Select Level</option>
+                                <option value="10th">10th</option>
+                                <option value="12th">12th</option>
+                                <option value="Graduate">Graduate</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Location (City/State)</label><input type="text" id="location" name="location" required></div>
+                    </form>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="start-btn" id="startBtn" onclick="startChat()">Start My Chat! ✨</button>
+                    <p class="enter-hint">💡 Or press <strong>Enter</strong> to start!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-panel hidden" id="chatPanel">
+            <div class="chat-header">CareerBot Chat 💬 <span style="font-size: 0.9em; opacity: 0.8;">(Type below to continue chatting)</span></div>
+            <div class="chat-messages" id="chat-container">
+                <div class="message bot-message">
+                    <strong>Hi there! 👋</strong> I'm CareerBot 🤖. Fill out the details above to kick off your personalized career journey!
+                </div>
+            </div>
+            <div style="padding: 15px; background: white; border-top: 1px solid #eee;">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="userInput" placeholder="Type your message here..." style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; font-family: inherit;">
+                    <button onclick="sendMessage()" style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 20px; cursor: pointer;">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startChat() {
+            const form = document.getElementById('profileForm');
+            const formData = new FormData(form);
+            if (!form.checkValidity()) { alert('Please fill in all fields!'); return; }
+
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = true;
+            startBtn.textContent = 'Launching Chat...';
+
+            fetch('/init_chat', { method: 'POST', body: formData })
+            .then(response => response.json())
+            .then(data => {
+                const formPanel = document.getElementById('formPanel');
+                const chatPanel = document.getElementById('chatPanel');
+                const chatContainer = document.getElementById('chat-container');
+
+                if (data.error) {
+                    alert(data.error);
+                    startBtn.disabled = false;
+                    startBtn.textContent = 'Start My Chat! ✨';
+                    return;
+                }
+
+                formPanel.classList.add('hidden');
+                chatPanel.classList.remove('hidden');
+                chatContainer.innerHTML = '';
+
+                // Typing animation
+                const typing = document.createElement('div');
+                typing.className = 'message bot-message';
+                typing.innerHTML = '<em>CareerBot is typing...</em>';
+                chatContainer.appendChild(typing);
+
+                setTimeout(() => {
+                    typing.remove();
+                    const botMsg = document.createElement('div');
+                    botMsg.className = 'message bot-message';
+                    botMsg.innerHTML = parseMarkdown(data.response);
+                    chatContainer.appendChild(botMsg);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                    const userMsg = document.createElement('div');
+                    userMsg.className = 'message user-message';
+                    userMsg.innerHTML = `<strong>Profile Shared:</strong><br>${formData.get('name')} | Interests: ${formData.get('interests')} | Skills: ${formData.get('skills')} | Stream: ${formData.get('stream')} | Grade: ${formData.get('grade_level')} | Location: ${formData.get('location')}`;
+                    chatContainer.appendChild(userMsg);
+                }, 1200);
+            })
+            .catch(error => {
+                alert('Oops! Something went wrong. Please try again.');
+                console.error(error);
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start My Chat! ✨';
+            });
+        }
+
+        function parseMarkdown(text) {
+            text = text.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            text = text.replace(/### (.*?)(\n|<br>)/g, '<h3>$1</h3>');
+            text = text.replace(/## (.*?)(\n|<br>)/g, '<h2>$1</h2>');
+            text = text.replace(/# (.*?)(\n|<br>)/g, '<h1>$1</h1>');
+            text = text.replace(/\n/g, '<br>');
+            text = text.replace(/(^|\n)[*-]\s+(.*)/g, '<ul><li>$2</li></ul>');
+            return text;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatContainer = document.getElementById('chat-container');
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user-message';
+            userMsg.innerHTML = message;
+            chatContainer.appendChild(userMsg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            input.value = '';
+
+            const typing = document.createElement('div');
+            typing.className = 'message bot-message';
+            typing.innerHTML = '<em>CareerBot is typing...</em>';
+            chatContainer.appendChild(typing);
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                typing.remove();
+                const botMsg = document.createElement('div');
+                botMsg.className = 'message bot-message';
+                botMsg.innerHTML = parseMarkdown(data.response);
+                chatContainer.appendChild(botMsg);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            })
+            .catch(error => {
+                typing.remove();
+                console.error('Chat error:', error);
+                const fallback = document.createElement('div');
+                fallback.className = 'message bot-message';
+                fallback.innerHTML = '<em>Sorry, I couldn\'t process that right now. Try again!</em>';
+                chatContainer.appendChild(fallback);
+            });
+        }
+
+        document.getElementById('userInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+        document.querySelectorAll('#profileForm input, #profileForm select').forEach(el => {
+            el.addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); startChat(); } });
+        });
+    </script>
+</body>
+</html>
