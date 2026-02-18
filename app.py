@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import re
-from serpapi import GoogleSearch  # ✅ SERP API import
+from serpapi.google_search import GoogleSearch # ✅ SERP API import
 
 app = Flask(__name__)
 app.secret_key = 'dummy_key_for_dev_only'
