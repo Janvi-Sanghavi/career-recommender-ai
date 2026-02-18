@@ -4,5 +4,5 @@ scikit-learn
 numpy
 langchain-google-genai
 google-generativeai
-serpapi
+google-search-results
 gunicorn
